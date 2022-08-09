@@ -1,4 +1,14 @@
 const { Client } = require("pg");
+const axios = require("axios");
+
+const http = axios.create({
+  baseURL:'https://randomuser.me/api/'
+})
+
+const loaderUsers = async () =>{
+  const {data:{results}} = await http.get('?results=500&seed=fm&page=1&nat=gb');
+  return results;
+}
 
 const config = {
   user: "postgres",
@@ -8,38 +18,12 @@ const config = {
   database: "fm_test",
 };
 
-const users = [
-  {
-    first_name: "Bred",
-    last_name: "Pit",
-    email: "pit2@gmail.com",
-    is_male: true,
-    birthday: "1963-06-28",
-    height: 1.92,
-  },
-  {
-    first_name: "Bred",
-    last_name: "Pit",
-    email: "pit3@gmail.com",
-    is_male: true,
-    birthday: "1963-06-28",
-    height: 1.92,
-  },
-  {
-    first_name: "Bred",
-    last_name: "Pit",
-    email: "pit4@gmail.com",
-    is_male: true,
-    birthday: "1963-06-28",
-    height: 1.92,
-  },
-];
 const client = new Client(config);
 start();
 
 async function start() {
   await client.connect();
-
+  const users = await loaderUsers(); 
   const result = await client.query(`
   INSERT INTO "users"("first_name","last_name","email","is_male","birthday","height") 
   VALUES ${mapUsers(users)};
@@ -51,8 +35,8 @@ async function start() {
 function mapUsers(users) {
   return users
     .map(
-      (user) =>
-        `('${user.first_name}', '${user.last_name}', '${user.email}', '${user.is_male}', '${user.birthday}', '${user.height}')`
+      ({name:{first, last}, email, gender, dob:{date}}) =>
+        `('${first}', '${last}', '${email}', '${gender==='male'}', '${date}', '${(Math.random()+1.3).toFixed(2)}')`
     )
     .join(",");
 }
